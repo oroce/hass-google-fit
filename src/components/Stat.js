@@ -1,4 +1,15 @@
 import React from 'react';
+import Typography from 'material-ui/Typography';
+import List, {
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  ListItemSecondaryAction
+} from 'material-ui/List';
+import Divider from 'material-ui/Divider';
+import DirectionsWalk from 'material-ui-icons/DirectionsWalk'; 
+import Hotel from 'material-ui-icons/Hotel'; 
+
 const SECOND_IN_MS = 1e3;
 const MINUTE_IN_MS = 60 * SECOND_IN_MS;
 const HOUR_IN_MS = 60 * MINUTE_IN_MS;
@@ -17,14 +28,34 @@ class Stat extends React.Component {
   }
   render() {
     return (
-      <div>
-        <strong>{ this.props.user.name }</strong>
-        <br />
-        Last 7 days: <strong>{ this.calculateLastNDays(7) } steps</strong>
-        <br />
-        Today: <strong>{ this.calculateLastNDays(1) } steps</strong>
-      </div>
-    )
+      <List>
+        <Typography variant="display2">{this.props.user.name}</Typography>
+        <ListItem>
+          <ListItemIcon>
+            <DirectionsWalk />
+          </ListItemIcon>
+          <ListItemText primary="Steps today" />
+          <ListItemSecondaryAction>
+            <Typography componentProp="span">
+              {this.calculateLastNDays(1)}
+            </Typography>
+          </ListItemSecondaryAction>
+        </ListItem>
+        <ListItem>
+          <ListItemIcon>
+            <DirectionsWalk />
+          </ListItemIcon>
+          <ListItemText primary="Steps this week" />
+          <ListItemSecondaryAction>
+            <Typography componentProp="span">
+              {this.calculateLastNDays(7)}
+            </Typography>
+          </ListItemSecondaryAction>
+        </ListItem>
+        <Divider />
+        <ListItem>Sleep last night:</ListItem>
+      </List>
+    );
   }
 };
 
