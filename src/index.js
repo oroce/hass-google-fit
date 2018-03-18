@@ -16,13 +16,19 @@ const storageConfig = {
   namespace: 'stepper'
 };
 const middlewares = [
+  thunk,
+  promiseMiddleware(),
   store => next => action => {
     console.log('my middleware', action);
+    if (action.payload && action.payload.then) {
+      return next(action)
+        .catch(err => {
+          console.warn(err);
+        })
+    }
     return next(action);
   },
-  thunk,
-  save({ ...storageConfig, debounce: 500 }),
-  promiseMiddleware()
+  save({ ...storageConfig, debounce: 500 })
 ];
 let composeEnhancers = compose;
 if (window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__) {
@@ -35,10 +41,11 @@ const store = createStore(
   load({
     ...storageConfig,
     preloadedState: {
-      stats: [],
-      tokens: [],
+      steps: [],
+      weights: [],
+      sessions: [],
       users: [],
-      statsPending: []
+      statsPending: [],
     }
   }),
   enhancer

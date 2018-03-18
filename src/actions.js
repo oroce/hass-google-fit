@@ -1,5 +1,6 @@
 // I'm begging you, give me pls a simple fetch wrapper
 import qs from 'querystring';
+import { subDays, format } from 'date-fns';
 function get(url, opts = {}) {
   let finalUrl = url;
   if (opts.qs) {
@@ -10,66 +11,105 @@ function get(url, opts = {}) {
   delete opts.headers;
   delete opts.qs;
   delete opts.json;
-  const promise = fetch(finalUrl, {
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers
-    },
-    ...opts
-  }).then(resp => {
-    if (resp.status > 399) {
-      throw new Error('Error: ' + resp.status);
+  return new Promise((resolve, reject) => {
+    const promise = fetch(finalUrl, {
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers
+      },
+      ...opts
+    }).then(resp => {
+      if (resp.status > 399) {
+        reject(new Error('Error: ' + resp.status));
+      }
+      return resp;
+    });
+    if (json) {
+      promise.then(resp => resolve(resp.json()));
+      return;
     }
-    return resp;
+    promise.then(resp => resolve(resp));
   });
-  if (json) {
-    return promise.then(resp => resp.json());
-  }
-
-  return promise;
 }
 function msTo64bitInt(ms) {
   return String(ms) + 1e5;
 }
-export function loadStateForToken(tokenObj) {
-  //return { type: 'DUMMY' };
+export function loadStatForUser(user) {
   const now = Date.now();
   const aWeekAgo = now - (1000 * 60 * 60 * 24 * 7);
-  const datasetId = `${msTo64bitInt(aWeekAgo)}-${msTo64bitInt(now)}`;
-  const dataSource = 'derived:com.google.step_count.delta:com.google.android.gms:estimated_steps';
-  const promise = get(
-    `https://www.googleapis.com/fitness/v1/users/me/dataSources/${dataSource}/datasets/${datasetId}`,
+  const days7Ago = subDays(now, 7);
+  const dataSetId = `${msTo64bitInt(aWeekAgo)}-${msTo64bitInt(now)}`;
+
+  const promiseSteps = get(
+    `/users/${user.id}/steps`,
     {
       qs: {
-        access_token: tokenObj.token
+        dataSetId
       },
       json: true
     }
   );
+  const promiseWeight = get(
+    `/users/${user.id}/weights`,
+    {
+      qs: {
+        dataSetId
+      },
+      json: true
+    }
+  );
+  const promiseSessions = get(
+    `/users/${user.id}/sessions`,
+    {
+      qs: {
+        startTime: `${format(days7Ago, 'YYYY-MM-DD')}T00:00:00.00Z`,
+        endTime: `${format(now, 'YYYY-MM-DD')}T23:59:59.00Z`,
+      },
+      json: true
+    }
+  );
+
   return dispatch => {
     dispatch({
       type: 'STEP_COUNT_LOAD',
-      payload: promise,
+      payload: promiseSteps,
       meta: {
-        statsLoadingForUser: tokenObj.user
+        forUser: user.id
+      }
+    });
+    dispatch({
+      type: 'WEIGHT_LOAD',
+      payload: promiseWeight,
+      meta: {
+        forUser: user.id
+      }
+    });
+    dispatch({
+      type: 'SESSIONS_LOAD',
+      payload: promiseSessions,
+      meta: {
+        forUser: user.id
       }
     });
   };
 }
 
-export function addToken(user, token) {
-  return {
-    type: 'TOKEN_ADD',
-    payload: {
-      user,
-      token
+export function loadStats() {
+  //return;
+  return async (dispatch, getState) => {
+    const promiseUsers = get('/users', { json: true });
+    dispatch({
+      type: 'USERS_LOAD',
+      payload: promiseUsers
+    });
+    await promiseUsers;
+    
+    const { users } = getState();
+
+    for (const user of users) {
+      console.log('load data for user', user);
+      dispatch(loadStatForUser(user));
     }
-  };
-}
-export function addUser(user) {
-  return {
-    type: 'USER_ADD',
-    payload: user
   };
 }

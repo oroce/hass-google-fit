@@ -6,9 +6,18 @@
   "homepage": "https://codesandbox.io/s/new",
   "main": "src/index.js",
   "dependencies": {
-    "lodash.uniqby": "4.7.0",
+    "date-fns": "^1.29.0",
+    "debug": "^3.1.0",
+    "dotenv-safe": "^5.0.1",
+    "google-refresh-token": "^0.5.3",
+    "koa-proxies": "^0.6.2",
+    "koa-route": "^3.2.0",
+    "lodash.uniqby": "^4.7.0",
+    "lodash.values": "^4.3.0",
+    "lowdb": "^1.0.0",
     "material-ui": "^1.0.0-beta.37",
     "material-ui-icons": "^1.0.0-beta.36",
+    "passport-google-oauth20": "^1.0.0",
     "react": "16.2.0",
     "react-dom": "16.2.0",
     "react-google-auth": "0.4.1",
@@ -18,11 +27,23 @@
     "redux": "3.7.2",
     "redux-localstorage-simple": "1.4.0",
     "redux-promise-middleware": "5.0.0",
-    "redux-thunk": "2.2.0"
+    "redux-thunk": "2.2.0",
+    "request-promise-native": "^1.0.5",
+    "time-cache": "^0.3.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "concurrently": "^3.5.1",
+    "koa": "^2.5.0",
+    "koa-bodyparser": "^4.2.0",
+    "koa-passport": "^4.0.1",
+    "koa-session": "^5.8.1",
+    "nodemon": "^1.17.2"
+  },
+  "proxy": "http://localhost:5000/",
   "scripts": {
-    "start": "react-scripts start",
+    "server:start": "nodemon -w app.js -r dotenv-safe/config app.js --dotenv_config_allowEmptyValues=true",
+    "client:start": "react-scripts start",
+    "start": "concurrently --kill-others-on-fail \"npm run server:start\" \"PORT=3001 BROWSER=none npm run client:start\"",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
